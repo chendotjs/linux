@@ -35,7 +35,7 @@ There are usually dependencies to header files of the current kernel.
 To avoid installing devel kernel headers system wide, as a normal
 user, simply call::
 
- make headers_install
+ make headers_install && make prepare
 
 This will creates a local "usr/include" directory in the git/build top
 level directory, that the make system automatically pickup first.
@@ -96,7 +96,7 @@ Pointing LLC and CLANG is not necessarily if it's installed on HOST and have
 in its targets appropriate arm64 arch (usually it has several arches).
 Build samples::
 
- make M=samples/bpf
+ make M=samples/bpf V=1
 
 Or build samples with SYSROOT if some header or library is absent in toolchain,
 say libelf, providing address to file system containing headers and libs,
