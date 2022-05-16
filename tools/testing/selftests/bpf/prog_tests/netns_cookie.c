@@ -38,6 +38,9 @@ void test_netns_cookie(void)
 	if (!ASSERT_OK(err, "prog_attach"))
 		goto done;
 
+	printf("sleep 36000\n");
+	sleep(36000);
+
 	server_fd = start_server(AF_INET6, SOCK_STREAM, "::1", 0, 0);
 	if (CHECK(server_fd < 0, "start_server", "errno %d\n", errno))
 		goto done;

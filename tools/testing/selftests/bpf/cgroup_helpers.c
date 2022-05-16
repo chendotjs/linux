@@ -110,16 +110,55 @@ int setup_cgroup_environment(void)
 
 	format_cgroup_path(cgroup_workdir, "");
 
+	fprintf(stderr, "** setup_cgroup_environment workdir: %s\n", cgroup_workdir);
+
+	/**
+	 * These 3 steps creates a new mount namespace for the test prog.
+	 *
+	 * archlinux ~ # lsns -t mnt
+	 *  NS TYPE NPROCS   PID USER            COMMAND
+	 * 4026531841 mnt     198     1 root            /sbin/init
+	 * 4026532546 mnt       1   346 root            ├─/usr/lib/systemd/systemd-udevd
+	 * 4026532548 mnt       1   351 systemd-network ├─/usr/lib/systemd/systemd-networkd
+	 * 4026532550 mnt       1   423 root            └─/usr/lib/systemd/systemd-logind
+	 * 4026531862 mnt       1    43 root            kdevtmpfs
+	 * 4026532557 mnt       1 44651 root            ./test_progs -t netns_cookie -v
+	 *
+	 *
+	 * we can use `bpftool cgroup tree` from init mntns to see actual mount point /sys/fs/cgroup/  .
+	 *
+	 * archlinux / # bpftool cgroup tree
+	 * CgroupPath
+	 * ID       AttachType      AttachFlags     Name
+	 * /sys/fs/cgroup/cgroup-test-work-dir44651/netns_cookie
+	 * 204      sock_ops        multi           get_netns_cooki
+	 *
+	 *
+	 * To see mount point /mnt defined by, we have to nsenter and see cgroup2 mount point /mnt.
+	 *
+	 *
+	 *
+	 * archlinux ~ # nsenter -m -t 44651
+	 * archlinux / # mount | grep cgroup2
+	 * cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime)
+	 * none on /mnt type cgroup2 (rw,relatime)
+	 * archlinux ~ # cat /sys/fs/cgroup/cgroup-test-work-dir44651/netns_cookie/cgroup.procs
+	 * 44651
+	 */
+
+	// 1
 	if (unshare(CLONE_NEWNS)) {
 		log_err("unshare");
 		return 1;
 	}
 
+	// 2
 	if (mount("none", "/", NULL, MS_REC | MS_PRIVATE, NULL)) {
 		log_err("mount fakeroot");
 		return 1;
 	}
 
+	// 3
 	if (mount("none", CGROUP_MOUNT_PATH, "cgroup2", 0, NULL) && errno != EBUSY) {
 		log_err("mount cgroup2");
 		return 1;
@@ -156,6 +195,8 @@ static int join_cgroup_from_top(const char *cgroup_path)
 	snprintf(cgroup_procs_path, sizeof(cgroup_procs_path),
 		 "%s/cgroup.procs", cgroup_path);
 
+	fprintf(stderr, "** join_cgroup_from_top to procs path: %s\n", cgroup_procs_path);
+
 	fd = open(cgroup_procs_path, O_WRONLY);
 	if (fd < 0) {
 		log_err("Opening Cgroup Procs: %s", cgroup_procs_path);
@@ -166,6 +207,11 @@ static int join_cgroup_from_top(const char *cgroup_path)
 		log_err("Joining Cgroup");
 		rc = 1;
 	}
+
+	if (rc == 0) {
+		fprintf(stderr, "** join_cgroup_from_top write pid %d done\n", pid);
+	}
+
 
 	close(fd);
 	return rc;
@@ -228,6 +274,7 @@ int create_and_get_cgroup(const char *path)
 	int fd;
 
 	format_cgroup_path(cgroup_path, path);
+	fprintf(stderr,"** create_and_get_cgroup mkdir: %s\n", cgroup_path);
 	if (mkdir(cgroup_path, 0777) && errno != EEXIST) {
 		log_err("mkdiring cgroup %s .. %s", path, cgroup_path);
 		return -1;
