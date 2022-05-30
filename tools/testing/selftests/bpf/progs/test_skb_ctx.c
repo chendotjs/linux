@@ -8,6 +8,7 @@ char _license[] SEC("license") = "GPL";
 SEC("tc")
 int process(struct __sk_buff *skb)
 {
+	bpf_printk("mother fucker: %d\n", skb->priority);
 	#pragma clang loop unroll(full)
 	for (int i = 0; i < 5; i++) {
 		if (skb->cb[i] != i + 1)

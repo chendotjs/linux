@@ -2,6 +2,14 @@
 #include <test_progs.h>
 #include <network_helpers.h>
 
+
+/**
+ * 所有 bpf_prog_test_run_opts 测试只在最后一次成功运行，之前的因为传参不对返回 -EINVAL
+ *
+ * 参见: https://patchwork.kernel.org/project/netdevbpf/patch/20210828011437.2917851-1-ntspring@fb.com/
+ *  convert_skb_to___skb in net/bpf/test_run.c
+ *
+ */
 void test_skb_ctx(void)
 {
 	struct __sk_buff skb = {
@@ -36,10 +44,15 @@ void test_skb_ctx(void)
 	if (!ASSERT_OK(err, "load"))
 		return;
 
+	printf("sleep 36000\n");
+	// sleep(36000);
+	int count = 0;
+
 	/* ctx_in != NULL, ctx_size_in == 0 */
 
 	tattr.ctx_size_in = 0;
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_NEQ(err, 0, "ctx_size_in");
 	tattr.ctx_size_in = sizeof(skb);
 
@@ -47,6 +60,7 @@ void test_skb_ctx(void)
 
 	tattr.ctx_size_out = 0;
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_NEQ(err, 0, "ctx_size_out");
 	tattr.ctx_size_out = sizeof(skb);
 
@@ -54,11 +68,13 @@ void test_skb_ctx(void)
 
 	skb.len = 1;
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_NEQ(err, 0, "len");
 	skb.len = 0;
 
 	skb.tc_index = 1;
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_NEQ(err, 0, "tc_index");
 	skb.tc_index = 0;
 
@@ -66,18 +82,22 @@ void test_skb_ctx(void)
 
 	skb.hash = 1;
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_NEQ(err, 0, "hash");
 	skb.hash = 0;
 
 	skb.sk = (struct bpf_sock *)1;
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_NEQ(err, 0, "sk");
 	skb.sk = 0;
 
 	err = bpf_prog_test_run_opts(prog_fd, &tattr);
+	printf("%d err: %d\n", count++, err);
 	ASSERT_OK(err, "test_run");
 	ASSERT_OK(tattr.retval, "test_run retval");
 	ASSERT_EQ(tattr.ctx_size_out, sizeof(skb), "ctx_size_out");
+
 
 	for (i = 0; i < 5; i++)
 		ASSERT_EQ(skb.cb[i], i + 2, "ctx_out_cb");
