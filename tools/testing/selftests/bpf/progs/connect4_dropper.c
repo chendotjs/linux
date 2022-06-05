@@ -16,6 +16,7 @@
 SEC("cgroup/connect4")
 int connect_v4_dropper(struct bpf_sock_addr *ctx)
 {
+	bpf_printk("sock type: %d, port: %d\n", ctx->type, bpf_htons(ctx->user_port));
 	if (ctx->type != SOCK_STREAM)
 		return VERDICT_PROCEED;
 	if (ctx->user_port == bpf_htons(60120))
