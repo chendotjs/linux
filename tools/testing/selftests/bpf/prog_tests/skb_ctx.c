@@ -6,8 +6,12 @@
 /**
  * 所有 bpf_prog_test_run_opts 测试只在最后一次成功运行，之前的因为传参不对返回 -EINVAL
  *
+ * 前两个 test， 修改了 ctx_size_in/out，在 syscall 层面 bpf_prog_test_run 检查未通过；
+ * https://github.com/torvalds/linux/blob/de5c208d533a46a074eb46ea17f672cc005a7269/kernel/bpf/syscall.c#L3578-L3584
+ *
+ * 后五个 test， 在 bpf_prog_test_run_skb 实际运行测试中检查 skb 字段不合法从而报错：
  * 参见: https://patchwork.kernel.org/project/netdevbpf/patch/20210828011437.2917851-1-ntspring@fb.com/
- *  convert_skb_to___skb in net/bpf/test_run.c
+ *  convert___skb_to_skb in net/bpf/test_run.c
  *
  */
 void test_skb_ctx(void)
@@ -44,8 +48,9 @@ void test_skb_ctx(void)
 	if (!ASSERT_OK(err, "load"))
 		return;
 
-	printf("sleep 36000\n");
-	// sleep(36000);
+	printf("....\n");
+	fgetc(stdin);
+
 	int count = 0;
 
 	/* ctx_in != NULL, ctx_size_in == 0 */
