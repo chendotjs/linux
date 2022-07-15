@@ -221,6 +221,7 @@ static int connect_fd_to_addr(int fd,
 
 	errno = 0;
 	ret = connect(fd, (const struct sockaddr *)addr, addrlen);
+	printf("** connect_fd_to_addr `connect` returns: %d\n", ret);
 	if (must_fail) {
 		if (!ret) {
 			log_err("Unexpected success to connect to server");

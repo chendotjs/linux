@@ -394,6 +394,7 @@ int setup_classid_environment(void)
 		return 1;
 	}
 
+	// mount -t cgroup -o net_cls none /sys/fs/cgroup/net_cls
 	if (mount("net_cls", NETCLS_MOUNT_PATH, "cgroup", 0, "net_cls") &&
 	    errno != EBUSY) {
 		log_err("mount cgroup net_cls");
