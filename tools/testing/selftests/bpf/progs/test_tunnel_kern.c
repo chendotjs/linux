@@ -516,7 +516,7 @@ int _ip6geneve_get_tunnel(struct __sk_buff *skb)
 }
 
 SEC("ipip_set_tunnel")
-int _ipip_set_tunnel(struct __sk_buff *skb)
+int _ipip_set_tunnel(struct __sk_buff *skb) // egress
 {
 	struct bpf_tunnel_key key = {};
 	void *data = (void *)(long)skb->data;
@@ -545,7 +545,7 @@ int _ipip_set_tunnel(struct __sk_buff *skb)
 }
 
 SEC("ipip_get_tunnel")
-int _ipip_get_tunnel(struct __sk_buff *skb)
+int _ipip_get_tunnel(struct __sk_buff *skb) // ingress
 {
 	int ret;
 	struct bpf_tunnel_key key;
